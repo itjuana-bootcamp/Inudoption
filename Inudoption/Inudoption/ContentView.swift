@@ -41,6 +41,33 @@ struct ContentView: View {
         users.map { $0.id }.max() ?? 0
     }
 
+    func scheduleLocalNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Say hi to your new friend"
+        content.subtitle = "Launch app to connect with doggie"
+        content.sound = .defaultCritical
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5
+                                                        , repeats: false)
+        let request = UNNotificationRequest(identifier: UUID().uuidString,
+                                            content: content,
+                                            trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    func registerForRemoteNotification(completion: @escaping (Bool) -> Void) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.sound, .alert, .criticalAlert, .badge]) { granted, error in
+            if error == nil {
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+                completion(true)
+            } else {
+                completion(false)
+            }
+        }
+    }
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -54,6 +81,16 @@ struct ContentView: View {
                                    height: 400)
                             .offset(x: 0, y: getCardOffset(with: geometry, id: user.id))
                     }
+                }
+            }
+        }
+        .onAppear {
+            registerForRemoteNotification { flag in
+                print("The user registered for remote notifications")
+                if flag {
+                    print("Scheduling alert...")
+                    scheduleLocalNotification()
+
                 }
             }
         }
